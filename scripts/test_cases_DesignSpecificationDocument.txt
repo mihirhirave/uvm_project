@@ -1,0 +1,55 @@
+```systemverilog
+// ALU Transaction Class
+class ALU_Transaction;
+    rand bit [31:0] operand0;
+    rand bit [31:0] operand1;
+    rand bit [2:0] alu_cmd;
+    bit [31:0] alu_out; // expected output
+
+    function new();
+    endfunction
+
+    // Constraint for random test case generation
+    constraint c_cmd {
+        alu_cmd inside {3'b000, 3'b001, 3'b010, 3'b011, 3'b100};
+    }
+
+    // Function to compute expected outputs based on inputs
+    function void compute_expected();
+        case (alu_cmd)
+            3'b000: alu_out = operand0 + operand1; // Addition
+            3'b001: alu_out = operand0 - operand1; // Subtraction
+            3'b010: alu_out = operand0 ^ operand1; // XOR
+            3'b011: alu_out = operand0 & operand1; // AND
+            3'b100: alu_out = operand0 | operand1; // OR
+            default: alu_out = 32'b0;
+        endcase
+    endfunction    
+endclass
+
+
+// ALU Scoreboard Class
+class ALU_Scoreboard extends uvm_scoreboard;
+    `uvm_component_utils(ALU_Scoreboard)
+
+    ALU_Transaction expected_tr;
+
+    function new(string name, uvm_component parent);
+        super.new(name, parent);
+    endfunction
+
+    virtual function void write(ALU_Transaction tr);
+        // Compare expected output with actual output
+        if (tr.alu_out !== expected_tr.alu_out) begin
+            `uvm_error("SCOREBOARD", $sformatf("Mismatch! Expected: %0h, Got: %0h", expected_tr.alu_out, tr.alu_out));
+        end else begin
+            `uvm_info("SCOREBOARD", "Output matches expected value.", UVM_MEDIUM);
+        end
+    endfunction
+
+    virtual function void run_phase(uvm_phase phase);
+        // Here you would typically hook in with the sequence
+        // and get the expected transaction.
+    endfunction
+endclass
+```
